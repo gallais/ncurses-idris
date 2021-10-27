@@ -208,6 +208,8 @@ prim__keyBackspace : PrimIO Char
 export
 data Window = Win AnyPtr
 
+||| Consider using @withNCurses@ instead.
+|||
 ||| You must call @initNCurses@ before using the other
 ||| ncurses functions and you must call @deinitNCurses@
 ||| after you are done (before exiting your program).
@@ -219,11 +221,25 @@ export
 initNCurses : HasIO io => io ()
 initNCurses = primIO $ prim__initScr
 
+||| Consider using @withNCurses@ instead.
+|||
 ||| Must be called after @initNCurses@ and before your
 ||| program exits.
 export
 deinitNCurses : HasIO io => io ()
 deinitNCurses = primIO $ prim__endWin
+
+
+||| Calls @initNCurses@, runs the action passed as an argument,
+||| and then calls @deiniteNCurses@ before returning the result.
+export
+withNCurses : HasIO io => io a -> io a
+withNCurses ma = do
+  initNCurses
+  a <- ma
+  deinitNCurses
+  pure a
+
 
 ||| Begin using color mode.
 export
