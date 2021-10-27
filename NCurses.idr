@@ -259,9 +259,23 @@ newWindow height width y x = Win <$> (primIO $ prim__newWindow (cast height) (ca
 ||| As is normal for ncurses, returns (height, width).
 export
 getMaxSize : HasIO io => Window -> io (Nat, Nat)
-getMaxSize (Win win) = do y <- (primIO $ prim__maxYWindow win)
-                          x <- (primIO $ prim__maxXWindow win)
-                          pure (fromInteger (cast y), fromInteger (cast x))
+getMaxSize (Win win)
+  = do y <- primIO (prim__maxYWindow win)
+       x <- primIO (prim__maxXWindow win)
+       pure (fromInteger (cast y), fromInteger (cast x))
+
+||| Window size.
+public export
+record Size where
+  constructor MkSize
+  height : Nat
+  width  : Nat
+
+||| Return a window size, using a record with named fields so that it's harder
+||| to mistake one dimension for the other
+export
+getSize : HasIO io => Window -> io Size
+getSize win = uncurry MkSize <$> getMaxSize win
 
 ||| Refresh the standard window.
 |||
