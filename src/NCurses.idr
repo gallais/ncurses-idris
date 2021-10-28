@@ -168,6 +168,11 @@ export
 mvPrint : HasIO io => Position -> String -> NCursesT io i i ()
 mvPrint pos str = MkNCurses (Core.mvPrint pos.row pos.col str)
 
+||| Set the visibility of the cursor.
+export
+setCursorVisibility : HasIO io => CursorVisibility -> NCursesT io i i ()
+setCursorVisibility vis = MkNCurses (Core.setCursorVisibility vis)
+
 --------------------------------------------------------------------------------
 -- These are not the best because they're for computations that do not change
 -- the  `noDelay` value. They are declared because they can be useful to call

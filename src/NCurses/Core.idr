@@ -368,8 +368,6 @@ export
 keypad : HasIO io => (enable : Bool) -> io ()
 keypad enable = keypad' !stdWindow enable
 
-public export
-data CursorVisibility = CInvisible | CNormal| CHighlyVisible
 
 ||| Set the visibility of the cursor.
 export
@@ -433,28 +431,6 @@ export
 mvAddCh : HasIO io => (row, col : Nat) -> Char -> io ()
 mvAddCh row col c = primIO $ prim__mvaddch (cast row) (cast col) c
 
-
-||| Keys that can be used when keypad is turned on.
-public export
-data Key = F0
-         | F1
-         | F2
-         | F3
-         | F4
-         | F5
-         | F6
-         | F7
-         | F8
-         | F9
-         | F10
-         | F11
-         | F12
-         | Up
-         | Down
-         | Left
-         | Right
-         | Backspace
-
 ||| Turn a Key into a Char that can be used to compare against
 ||| the results of getCh. This only applies if you have enabled
 ||| keypad for the given window.
@@ -478,18 +454,6 @@ fnKeyChar Down      = primIO $ prim__keyDown
 fnKeyChar Left      = primIO $ prim__keyLeft
 fnKeyChar Right     = primIO $ prim__keyRight
 fnKeyChar Backspace = primIO $ prim__keyBackspace
-
-||| The default ncurses colors that can be used in constructing
-||| color pairs.
-public export
-data Color = Black
-           | Red
-           | Green
-           | Yellow
-           | Blue
-           | Magenta
-           | Cyan
-           | White
 
 export
 data ColorPair = MkColorPair Nat

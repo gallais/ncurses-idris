@@ -18,6 +18,7 @@ main = runNCurses $ NCurses.do
   cBreak
   noEcho
   clear
+  setCursorVisibility CInvisible
 
   -- Initialise triangle
   size <- getSize
