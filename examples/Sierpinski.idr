@@ -25,8 +25,7 @@ main = runNCurses $ NCurses.do
   let maxcols = pred size.width
 
   let p0 = MkPosition { row = 0, col = 0 }
-  let p1 = MkPosition { row = maxlines
-                      , col = (maxcols `divNatNZ` 2) %search}
+  let p1 = MkPosition { row = maxlines, col = half maxcols }
   let p2 = MkPosition { row = 0, col = maxcols }
   let ps : Vect 3 ? = [p0,p1,p2]
   for_ @{NCURSES} Fin.range $ \ k => do
@@ -45,6 +44,9 @@ main = runNCurses $ NCurses.do
 
   where
 
+    half : Nat -> Nat
+    half n = (n `divNatNZ` 2) %search
+
     -- The bound better be smaller than MAX_INT32
     randNat : Nat -> IO Nat
     randNat bnd = do let i : Int32 = !randomIO
@@ -59,8 +61,8 @@ main = runNCurses $ NCurses.do
     loop ps (S n) pi = do
       k <- lift $ randIndex 3
       let pk = index k ps
-      let pi' = { row $= \ xi => ((xi + pk.row) `divNatNZ` 2) %search
-                , col $= \ yi => ((yi + pk.col) `divNatNZ` 2) %search
+      let pi' = { row $= \ xi => half (xi + pk.row)
+                , col $= \ yi => half (yi + pk.col)
                 } pi
       mvAddCh pi' '*'
       refresh
