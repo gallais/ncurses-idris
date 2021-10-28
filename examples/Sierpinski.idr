@@ -43,13 +43,12 @@ main = runNCurses $ NCurses.do
   refresh
   ignore $ getCh
 
-
   where
 
     -- The bound better be smaller than MAX_INT32
     randNat : Nat -> IO Nat
     randNat bnd = do let i : Int32 = !randomIO
-                     pure $ cast (i `mod` cast bnd)
+                     pure $ cast (abs i `mod` cast bnd)
 
     randIndex : (n : Nat) -> {auto 0 _ : NonZero n} -> IO (Fin n)
     randIndex (S n) = do k <- randNat (S n)
