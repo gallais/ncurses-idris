@@ -39,7 +39,7 @@ main = runNCurses $ NCurses.do
   -- Iterate the triangle
   loop ps 200000 p
   -- Done
-  nPutStrLn maxlines "Press any key to quit"
+  mvPrint (MkRow maxlines) "Press any key to quit"
   refresh
   ignore $ getCh
 

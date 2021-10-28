@@ -158,13 +158,15 @@ export
 nMoveCursor : HasIO io => Position -> NCursesT io i i ()
 nMoveCursor pos = MkNCurses (Core.nMoveCursor pos.row pos.col)
 
+||| Move the cursor and insert a char in the standard window
 export
 mvAddCh : HasIO io => Position -> Char -> NCursesT io i i ()
 mvAddCh pos c = MkNCurses (Core.mvAddCh pos.row pos.col c)
 
+||| Move the cursor and print to the standard window.
 export
-nPutStrLn : HasIO io => (row : Nat) -> String -> NCursesT io i i ()
-nPutStrLn row str = MkNCurses (Core.nPutStrLn row str)
+mvPrint : HasIO io => Position -> String -> NCursesT io i i ()
+mvPrint pos str = MkNCurses (Core.mvPrint pos.row pos.col str)
 
 --------------------------------------------------------------------------------
 -- These are not the best because they're for computations that do not change

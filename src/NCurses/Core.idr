@@ -387,6 +387,19 @@ nMoveCursor row col = primIO $ prim__move (cast row) (cast col)
 
 ||| Move the cursor and print to the standard window.
 |||
+||| See @mvPrint'@ to print to a particular window.
+export
+mvPrint : HasIO io => (row, col : Nat) -> String -> io ()
+mvPrint row col str = primIO $ prim__mvPrint (cast row) (cast col) "%s" str
+
+||| Move the cursor and print to a window.
+export
+mvPrint' : HasIO io => Window -> (row, col : Nat) -> String -> io ()
+mvPrint' (Win win) row col str
+  = primIO $ prim__mvPrintWindow win (cast row) (cast col) "%s" str
+
+||| Move the cursor and print to the standard window.
+|||
 ||| See @nPutStrLn'@ to print to a particular window.
 export
 nPutStrLn : HasIO io => (row : Nat) -> String -> io ()
