@@ -1,5 +1,7 @@
 module NCurses.Core
 
+import NCurses.Types
+
 %default total
 
 libncurses : String -> String
@@ -59,11 +61,27 @@ prim__clear : PrimIO ()
 %foreign libncurses "wclear"
 prim__clearWindow : AnyPtr -> PrimIO ()
 
+%foreign libncurses "waddch"
+prim__waddCh : AnyPtr -> Char -> PrimIO ()
+
+%foreign libncurses "addch"
+prim__addCh : Char -> PrimIO ()
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+%foreign libncurses "mvaddch"
+prim__mvaddch : Int -> Int -> Char -> PrimIO ()
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+%foreign libncurses "mvwaddch"
+prim__mvwaddch : AnyPtr -> Int -> Int -> Char -> PrimIO ()
+
 ||| move to row and column given and print
 ||| the given string.
 |||
-||| IMPORTANT: This takes the y-position before
-||| the x-position.
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
 |||
 ||| The second to last argument is a format string but
 ||| its best to just always pass strings ("%s").
@@ -267,13 +285,6 @@ getMaxSize (Win win)
        x <- primIO (prim__maxXWindow win)
        pure (fromInteger (cast y), fromInteger (cast x))
 
-||| Window size.
-public export
-record Size where
-  constructor MkSize
-  height : Nat
-  width  : Nat
-
 ||| Return a window size, using a record with named fields so that it's harder
 ||| to mistake one dimension for the other
 export
@@ -385,6 +396,30 @@ nPutStrLn row str = primIO $ prim__mvPrint (cast row) 0 "%s" str
 export
 nPutStrLn' : HasIO io => Window -> (row : Nat) -> String -> io ()
 nPutStrLn' (Win win) row str = primIO $ prim__mvPrintWindow win (cast row) 0 "%s" str
+
+||| Add a character under the cursor in a given window
+export
+addCh' : HasIO io => Window -> Char -> io ()
+addCh' (Win win) c = primIO $ prim__waddCh win c
+
+||| Add a character under the cursor in the standard window
+export
+addCh : HasIO io => Char -> io ()
+addCh c = primIO $ prim__addCh c
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+export
+mvAddCh' : HasIO io => Window -> (row, col : Nat) -> Char -> io ()
+mvAddCh' (Win win) row col c
+  = primIO $ prim__mvwaddch win (cast row) (cast col) c
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+export
+mvAddCh : HasIO io => (row, col : Nat) -> Char -> io ()
+mvAddCh row col c = primIO $ prim__mvaddch (cast row) (cast col) c
+
 
 ||| Keys that can be used when keypad is turned on.
 public export

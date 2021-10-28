@@ -1,6 +1,7 @@
 module NCurses
 
 import NCurses.Core
+import public NCurses.Types
 
 %default total
 
@@ -30,14 +31,14 @@ lift = MkNCurses
 ||| Note that we know that we always start with `noDelay` off and do not care
 ||| about the end state.
 export
-runNCursesT: HasIO io => NCursesT io False i a -> io a
-runNCursesT(MkNCurses act) = withNCurses act
+runNCurses : HasIO io => NCursesT io False i a -> io a
+runNCurses (MkNCurses act) = withNCurses act
 
 ||| Convenient alias when the underlying IO monad is IO itself and the indices
 ||| can be inferred.
 public export
-NCurses : {noDelayIn, noDelayOut : Bool} -> Type -> Type
-NCurses = NCursesT IO noDelayIn noDelayOut
+NCurses : (noDelayIn, noDelayOut : Bool) -> Type -> Type
+NCurses = NCursesT IO
 
 --------------------------------------------------------------------------------
 -- Indexed Functor, Applicative, Monad
@@ -123,3 +124,82 @@ getCh {i = False} = MkNCurses Core.getCh
 export
 noDelay : HasIO io => (b : Bool) -> NCursesT io i b ()
 noDelay b = MkNCurses  (Core.noDelay b)
+
+||| Turn echoing off so that user-inputed characters do not show up in the
+||| terminal.
+export
+noEcho : HasIO io => NCursesT io i i ()
+noEcho = MkNCurses Core.noEcho
+
+||| Switch keyboard input to cbreak mode. That is to say that the FIFO of input
+||| characters is filled in as soon as they are typed rather than on every
+||| newline character.
+export
+cBreak : HasIO io => NCursesT io i i ()
+cBreak = MkNCurses Core.cBreak
+
+||| Get the standard window's size
+export
+getSize : HasIO io => NCursesT io i i Size
+getSize = MkNCurses $ do Core.getSize !stdWindow
+
+||| Refresh the standard window.
+export
+refresh : HasIO io => NCursesT io i i ()
+refresh = MkNCurses Core.refresh
+
+||| Clear the standard window.
+export
+clear : HasIO io => NCursesT io i i ()
+clear = MkNCurses Core.clear
+
+||| Move the cursor in the standard window.
+export
+nMoveCursor : HasIO io => Position -> NCursesT io i i ()
+nMoveCursor pos = MkNCurses (Core.nMoveCursor pos.row pos.col)
+
+export
+mvAddCh : HasIO io => Position -> Char -> NCursesT io i i ()
+mvAddCh pos c = MkNCurses (Core.mvAddCh pos.row pos.col c)
+
+export
+nPutStrLn : HasIO io => (row : Nat) -> String -> NCursesT io i i ()
+nPutStrLn row str = MkNCurses (Core.nPutStrLn row str)
+
+--------------------------------------------------------------------------------
+-- These are not the best because they're for computations that do not change
+-- the  `noDelay` value. They are declared because they can be useful to call
+-- existing functions such as `for_`.
+--------------------------------------------------------------------------------
+
+namespace Functor
+
+  export
+  [NCURSES] Functor io => Functor (NCursesT io i i) where
+    map = NCurses.map
+
+namespace Applicative
+
+  export
+  [NCURSES] Monad io => Applicative (NCursesT io i i)
+    using Functor.NCURSES
+    where
+      pure = NCurses.pure
+      (<*>) = NCurses.(<*>)
+
+namespace Monad
+
+  export
+  [NCURSES] Monad io => Monad (NCursesT io i i)
+    using Applicative.NCURSES
+    where
+      (>>=) = NCurses.(>>=)
+      join mmx = NCurses.(>>=) mmx id
+
+namespace HasIO
+
+  export
+  [NCURSES] HasIO io => HasIO (NCursesT io i i)
+    using Monad.NCURSES
+    where
+      liftIO = MkNCurses . liftIO
