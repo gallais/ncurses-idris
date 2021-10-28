@@ -1,11 +1,12 @@
 IDRIS := idris2
 
-LD_OVERRIDE ?= 
+LD_OVERRIDE ?=
 
+PKG = ncurses
 TARGET = libncurses-idris
 TARGET_VERSION ?= 0
 
-SHAREDLIB_INSTALLDIR = `${IDRIS} --libdir`/ncurses-idris-${TARGET_VERSION}/lib
+SHAREDLIB_INSTALLDIR = `${IDRIS} --libdir`/${PKG}-${TARGET_VERSION}/lib
 
 LDFLAGS = $(LD_OVERRIDE) -lncurses
 
@@ -37,7 +38,7 @@ $(TARGET)$(SHLIB_SUFFIX): $(OBJS)
 .PHONY: idris
 
 idris:
-	idris2 --build ncurses-idris.ipkg
+	idris2 --build $(PKG).ipkg
 
 .PHONY: clean
 
@@ -51,7 +52,7 @@ cleandep: clean
 .PHONY: install
 
 install:
-	idris2 --install ncurses-idris.ipkg
+	idris2 --install ${PKG}.ipkg
 	@if ! [ -d $(SHAREDLIB_INSTALLDIR) ]; then mkdir -p $(SHAREDLIB_INSTALLDIR); fi
 	install $(TARGET)$(SHLIB_SUFFIX) $(wildcard *.h) $(SHAREDLIB_INSTALLDIR)
 	$(DYLIB_WORKAROUND)

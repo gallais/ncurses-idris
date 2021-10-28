@@ -1,9 +1,9 @@
-module NCurses
+module NCurses.Core
 
 %default total
 
 libncurses : String -> String
-libncurses fn = "C:" ++ fn ++ ",libncurses"
+libncurses fn = "C:" ++ fn ++ ",libncurses 6"
 
 libhelper : String -> String
 libhelper fn = "C:" ++ fn ++ ",libncurses-idris"
@@ -17,11 +17,14 @@ prim__noEcho : PrimIO ()
 %foreign libncurses "keypad"
 prim__keypad : AnyPtr -> Int -> PrimIO ()
 
+%foreign libncurses "nodelay"
+prim__noDelay : AnyPtr -> Int -> PrimIO ()
+
 %foreign libncurses "curs_set"
 prim__setCursorVisibility : Int -> PrimIO ()
 
 %foreign libncurses "getch"
-prim__getCh : PrimIO Char
+prim__getCh : PrimIO Int8
 
 %foreign libncurses "start_color"
 prim__startColor : PrimIO ()
@@ -301,6 +304,10 @@ export
 clear' : HasIO io => Window -> io ()
 clear' (Win win) = primIO $ prim__clearWindow win
 
+export
+getChAsInt8 : HasIO io => io Int8
+getChAsInt8 = primIO prim__getCh
+
 ||| Get a single character immediately.
 |||
 ||| This contrasts with a read from the default shell
@@ -308,7 +315,7 @@ clear' (Win win) = primIO $ prim__clearWindow win
 ||| its buffer and send input to a program.
 export
 getCh : HasIO io => io Char
-getCh = primIO $ prim__getCh
+getCh = cast <$> getChAsInt8
 
 ||| Switch keyboard input to cbreak mode.
 export
@@ -323,6 +330,14 @@ noEcho = primIO $ prim__noEcho
 boolToInt : Bool -> Int
 boolToInt False = 0
 boolToInt True  = 1
+
+export
+noDelay' : HasIO io => Window -> (enable : Bool) -> io ()
+noDelay' (Win win) enable = primIO $ prim__noDelay win (boolToInt enable)
+
+export
+noDelay : HasIO io => (enable : Bool) -> io ()
+noDelay enable = noDelay' !stdWindow enable
 
 ||| Turn keypad mode on or off for the given window.
 ||| When on, function keys (F0, F1, ...) and arrow keys are
@@ -342,7 +357,7 @@ export
 keypad : HasIO io => (enable : Bool) -> io ()
 keypad enable = keypad' !stdWindow enable
 
-public export 
+public export
 data CursorVisibility = CInvisible | CNormal| CHighlyVisible
 
 ||| Set the visibility of the cursor.
@@ -394,7 +409,7 @@ data Key = F0
 
 ||| Turn a Key into a Char that can be used to compare against
 ||| the results of getCh. This only applies if you have enabled
-||| keypad for the given window.                                               
+||| keypad for the given window.
 export
 fnKeyChar : HasIO io => Key -> io Char
 fnKeyChar F0        = primIO $ prim__keyF0
@@ -445,7 +460,7 @@ getColor color = case color of
                       Magenta => primIO $ prim__magentaColor
                       Cyan    => primIO $ prim__cyanColor
                       White   => primIO $ prim__whiteColor
-               
+
 ||| Create a new color pair. You must tell it the index to create
 ||| the color at, which should be a number starting at 0. Some
 ||| platforms allow you to redefine a color at a given index but this
@@ -456,11 +471,11 @@ getColor color = case color of
 ||| it will use the first available user color pair index of 1.
 export
 initColorPair : HasIO io => Nat -> (fg : Color) -> (bg : Color) -> io ColorPair
-initColorPair idx fg bg = 
+initColorPair idx fg bg =
   do bgColor <- getColor bg
      fgColor <- getColor fg
      let actualIdx = (S idx)
-     primIO $ prim__initColorPair (cast actualIdx) fgColor bgColor 
+     primIO $ prim__initColorPair (cast actualIdx) fgColor bgColor
      pure (MkColorPair actualIdx)
 
 ||| Attributes that can be given to text within an ncurses window.
@@ -514,36 +529,35 @@ nSetAttr' (Win win) attr = do attribute <- getAttribute attr
 |||
 ||| See @nChangeAttr'@ to change attributes in another window.
 export
-nChangeAttr : HasIO io 
-           => (row : Nat) 
-           -> (col : Nat) 
-           -> (len : Maybe Nat) 
-           -> Attribute 
+nChangeAttr : HasIO io
+           => (row : Nat)
+           -> (col : Nat)
+           -> (len : Maybe Nat)
+           -> Attribute
            -> ColorPair
            -> io ()
-nChangeAttr row col len attr (MkColorPair colorIdx) = 
+nChangeAttr row col len attr (MkColorPair colorIdx) =
   let length = the Int (maybe (-1) cast len)
-  in  
+  in
       do attribute <- getAttribute attr
-         primIO $ 
+         primIO $
            prim__mvChangeAt (cast row) (cast col) length attribute (cast colorIdx) prim__getNullAnyPtr
 
 ||| Change the attributes at the given position in the given window.
 ||| A len of Nothing means "the whole line."
 ||| A color pair with @defaultColorPair@ offering a sane default.
 export
-nChangeAttr' : HasIO io 
+nChangeAttr' : HasIO io
             => Window
-            -> (row : Nat) 
-            -> (col : Nat) 
-            -> (len : Maybe Nat) 
-            -> Attribute 
+            -> (row : Nat)
+            -> (col : Nat)
+            -> (len : Maybe Nat)
+            -> Attribute
             -> ColorPair
             -> io ()
-nChangeAttr' (Win win) row col len attr (MkColorPair colorIdx) = 
+nChangeAttr' (Win win) row col len attr (MkColorPair colorIdx) =
   let length = the Int (maybe (-1) cast len)
-  in  
+  in
       do attribute <- getAttribute attr
-         primIO $ 
+         primIO $
            prim__mvChangeAtWindow win (cast row) (cast col) length attribute (cast colorIdx) prim__getNullAnyPtr
-
