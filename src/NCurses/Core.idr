@@ -455,6 +455,17 @@ fnKeyChar Left      = primIO $ prim__keyLeft
 fnKeyChar Right     = primIO $ prim__keyRight
 fnKeyChar Backspace = primIO $ prim__keyBackspace
 
+firstM : Monad m => (a -> m (Maybe b)) -> List a -> m (Maybe b)
+firstM test [] = pure Nothing
+firstM test (a :: as)
+  = do Nothing <- test a
+         | Just b => pure (Just b)
+       firstM test as
+
+export
+isKey : HasIO io => Char -> io (Maybe Key)
+isKey c = firstM (\ k => pure $ k <$ guard (c == !(fnKeyChar k))) allKeys
+
 export
 data ColorPair = MkColorPair Nat
 

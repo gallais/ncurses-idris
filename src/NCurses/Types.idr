@@ -44,6 +44,13 @@ data Key = F0
          | Right
          | Backspace
 
+export
+allKeys : List Key
+allKeys = [F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12
+          , Up, Down, Left, Right
+          , Backspace
+          ]
+
 ||| The default ncurses colors that can be used in constructing
 ||| color pairs.
 public export

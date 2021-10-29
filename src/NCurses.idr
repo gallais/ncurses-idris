@@ -5,6 +5,24 @@ import public NCurses.Types
 
 %default total
 
+||| The current state of the NCurses configuration
+public export
+record Config where
+  constructor MkConfig
+  noDelayEnabled : Bool
+  keypadEnabled  : Bool
+
+namespace Config
+
+  ||| Initial configuration when you start running a freshly initialised
+  ||| ncurses computation
+  public export
+  init : Config
+  init = MkConfig
+    { noDelayEnabled = False
+    , keypadEnabled  = False
+    }
+
 ||| An `io a` computation involving ncurses primitives.
 ||| @ noDelayIn  records whether `noDelay` is `True` before the action is run
 ||| @ noDelayOut records whether `noDelay` is `True` after the action was run
@@ -15,7 +33,7 @@ import public NCurses.Types
 export
 record NCursesT
   (io : Type -> Type)
-  (noDelayIn, noDelayOut : Bool)
+  (inC, outC : Config)
   (a : Type) where
   constructor MkNCurses
   getNCurses : io a
@@ -31,13 +49,13 @@ lift = MkNCurses
 ||| Note that we know that we always start with `noDelay` off and do not care
 ||| about the end state.
 export
-runNCurses : HasIO io => NCursesT io False i a -> io a
+runNCurses : HasIO io => NCursesT io Config.init i a -> io a
 runNCurses (MkNCurses act) = withNCurses act
 
 ||| Convenient alias when the underlying IO monad is IO itself and the indices
 ||| can be inferred.
 public export
-NCurses : (noDelayIn, noDelayOut : Bool) -> Type -> Type
+NCurses : (inC, outC : Config) -> Type -> Type
 NCurses = NCursesT IO
 
 --------------------------------------------------------------------------------
@@ -106,23 +124,40 @@ ma >> mb = ma >>= const mb
 -- Ncurses primitives. This time with interesting indices!
 --------------------------------------------------------------------------------
 
-||| Get a character from the FIFO.
-||| If the FIFO is empty then:
-|||  * if `noDelay` is `True` we return `Nothing`
-|||  * if `noDelay` is `False` we wait until a character arrives
-||| The type of the function reflects that configuration status.
+||| Return type of `getCh`.
+||| 1. Return either a character or potentially a key if the keypad is enabled
+||| 2. Block until an input arrives or return immediately if noDelay is enalbed
+|||    In that second scenario, if the FIFO is empty then return `Nothing`.
+public export
+GetCh : Config -> Type
+GetCh cfg = ifThenElse cfg.noDelayEnabled Maybe Prelude.id
+          $ ifThenElse cfg.keypadEnabled  (Either Key Char) Char
+
+asKey : HasIO io => (b : Bool) -> Char ->
+        io (ifThenElse b (Either Key Char) Char)
+asKey False c = pure c
+asKey True c = do Nothing <- isKey c
+                    | Just k => pure (Left k)
+                  pure (Right c)
+
+||| Get a character from the FIFO. The return type is heavily dependent on the
+||| current configuration of the ncurses computation. See `GetCh` for more
+||| information.
 export
-getCh : {i : Bool} -> HasIO io =>
-        NCursesT io i i (ifThenElse i Maybe Prelude.id $ Char)
-getCh {i = True}  = MkNCurses $ do
+getCh : {i : Config} -> HasIO io => NCursesT io i i (GetCh i)
+getCh {i = MkConfig True b}  = MkNCurses $ do
    i <- Core.getChAsInt8
-   pure $ cast i <$ guard (0 <= i)
-getCh {i = False} = MkNCurses Core.getCh
+   let True = 0 <= i
+       | False => pure Nothing
+   Just <$> asKey b (cast i)
+getCh {i = MkConfig False b} = MkNCurses $ do
+  c <- Core.getCh
+  asKey b c
 
 ||| Set `noDelay` to the boolean value passed.
 ||| This will have an action on the type of any `getCh` action run afterwards.
 export
-noDelay : HasIO io => (b : Bool) -> NCursesT io i b ()
+noDelay : HasIO io => (b : Bool) -> NCursesT io i ({ noDelayEnabled := b } i) ()
 noDelay b = MkNCurses  (Core.noDelay b)
 
 ||| Turn echoing off so that user-inputed characters do not show up in the
@@ -172,6 +207,15 @@ mvPrint pos str = MkNCurses (Core.mvPrint pos.row pos.col str)
 export
 setCursorVisibility : HasIO io => CursorVisibility -> NCursesT io i i ()
 setCursorVisibility vis = MkNCurses (Core.setCursorVisibility vis)
+
+||| Turn keypad mode on or off for the std window.
+||| When on, function keys (F0, F1, ...) and arrow keys are
+||| transformed into single chars that can be compared against
+||| the result of passing a particular key to the fnKeyChar
+||| function.
+export
+keypad : HasIO io => (b : Bool) -> NCursesT io i ({ keypadEnabled := b } i) ()
+keypad enable = MkNCurses (Core.keypad enable)
 
 --------------------------------------------------------------------------------
 -- These are not the best because they're for computations that do not change

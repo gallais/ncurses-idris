@@ -57,7 +57,8 @@ main = runNCurses $ NCurses.do
     randIndex (S n) = do k <- randNat (S n)
                          pure (restrict n $ cast k)
 
-    loop : Vect 3 Position -> Nat -> Position -> NCurses False False ()
+    loop : Vect 3 Position -> Nat -> Position ->
+           NCurses Config.init Config.init ()
     loop ps Z     pi = pure ()
     loop ps (S n) pi = do
       k <- lift $ randIndex 3
