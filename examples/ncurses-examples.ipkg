@@ -14,6 +14,7 @@ depends = contrib, ncurses
 
 -- modules to install
 modules = Sierpinski
+        , Adventure
 
 -- main file (i.e. file to load at REPL)
 -- main =

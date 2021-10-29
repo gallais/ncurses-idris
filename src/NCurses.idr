@@ -12,6 +12,14 @@ record Config where
   noDelayEnabled : Bool
   keypadEnabled  : Bool
 
+public export
+setNoDelay : (enable : Bool) -> Config -> Config
+setNoDelay b (MkConfig _ ke) = MkConfig b ke
+
+public export
+setKeypad : (enable : Bool) -> Config -> Config
+setKeypad b (MkConfig nd _) = MkConfig nd b
+
 namespace Config
 
   ||| Initial configuration when you start running a freshly initialised
@@ -93,6 +101,12 @@ export
 pure : Applicative io => a -> NCursesT io i i a
 pure = MkNCurses . pure
 
+||| Only run the ncurses computation if the boolean is True.
+export
+when : Applicative io => Bool -> Lazy (NCursesT io i i ()) -> NCursesT io i i ()
+when True act = act
+when False _ = pure ()
+
 ||| Combining an ncurses computation returning a function and one returning an
 ||| argument for it.
 ||| We are using a `Monad io` constraint so that we can guarantee that the the
@@ -157,7 +171,7 @@ getCh {i = MkConfig False b} = MkNCurses $ do
 ||| Set `noDelay` to the boolean value passed.
 ||| This will have an action on the type of any `getCh` action run afterwards.
 export
-noDelay : HasIO io => (b : Bool) -> NCursesT io i ({ noDelayEnabled := b } i) ()
+noDelay : HasIO io => (b : Bool) -> NCursesT io i (setNoDelay b i) ()
 noDelay b = MkNCurses  (Core.noDelay b)
 
 ||| Turn echoing off so that user-inputed characters do not show up in the
@@ -198,6 +212,44 @@ export
 mvAddCh : HasIO io => Position -> Char -> NCursesT io i i ()
 mvAddCh pos c = MkNCurses (Core.mvAddCh pos.row pos.col c)
 
+||| Move the cursor and get the char under it in the standard window
+export
+mvInCh : HasIO io => Position -> NCursesT io i i Char
+mvInCh pos = MkNCurses (Core.mvInCh pos.row pos.col)
+
+||| Print a horizontal line in the standard window
+||| @ c is the character the line is made of
+||| @ n is the length of the line
+export
+hLine : HasIO io => (c : Char) -> (n : Nat) -> NCursesT io i i ()
+hLine c n = MkNCurses (Core.hLine c n)
+
+||| Print a vertical line in the standard window
+||| @ c is the character the line is made of
+||| @ n is the length of the line
+export
+vLine : HasIO io => (c : Char) -> (n : Nat) -> NCursesT io i i ()
+vLine c n = MkNCurses (Core.vLine c n)
+
+||| Move the cursor and print a horizontal line in the standard window
+||| @ c is the character the line is made of
+||| @ n is the length of the line
+export
+mvHLine : HasIO io => Position -> (c : Char) -> (n : Nat) -> NCursesT io i i ()
+mvHLine pos c n = MkNCurses (Core.mvHLine pos.row pos.col c n)
+
+||| Move the cursor and print a vertical line in the standard window
+||| @ c is the character the line is made of
+||| @ n is the length of the line
+export
+mvVLine : HasIO io => Position -> (c : Char) -> (n : Nat) -> NCursesT io i i ()
+mvVLine pos c n = MkNCurses (Core.mvVLine pos.row pos.col c n)
+
+||| Move the cursor
+export
+move : HasIO io => Position -> NCursesT io i i ()
+move pos = MkNCurses (Core.nMoveCursor pos.row pos.col)
+
 ||| Move the cursor and print to the standard window.
 export
 mvPrint : HasIO io => Position -> String -> NCursesT io i i ()
@@ -214,7 +266,7 @@ setCursorVisibility vis = MkNCurses (Core.setCursorVisibility vis)
 ||| the result of passing a particular key to the fnKeyChar
 ||| function.
 export
-keypad : HasIO io => (b : Bool) -> NCursesT io i ({ keypadEnabled := b } i) ()
+keypad : HasIO io => (b : Bool) -> NCursesT io i (setKeypad b i) ()
 keypad enable = MkNCurses (Core.keypad enable)
 
 --------------------------------------------------------------------------------

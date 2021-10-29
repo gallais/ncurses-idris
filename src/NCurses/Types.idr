@@ -1,5 +1,7 @@
 module NCurses.Types
 
+import Data.Nat
+
 %default total
 
 ||| Window size.
@@ -19,6 +21,22 @@ record Position where
 export
 MkRow : Nat -> Position
 MkRow n = MkPosition n 0
+
+export
+up : Position -> Position
+up = { row $= pred }
+
+export
+down : Position -> Position
+down = { row $= S }
+
+export
+left : Position -> Position
+left = { col $= pred }
+
+export
+right : Position -> Position
+right = { col $= S }
 
 public export
 data CursorVisibility = CInvisible | CNormal| CHighlyVisible

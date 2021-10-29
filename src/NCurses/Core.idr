@@ -67,6 +67,54 @@ prim__waddCh : AnyPtr -> Char -> PrimIO ()
 %foreign libncurses "addch"
 prim__addCh : Char -> PrimIO ()
 
+%foreign libncurses "wvline"
+prim__wvline : AnyPtr -> Char -> Int -> PrimIO ()
+
+%foreign libncurses "vline"
+prim__vline : Char -> Int -> PrimIO ()
+
+%foreign libncurses "whline"
+prim__whline : AnyPtr -> Char -> Int -> PrimIO ()
+
+%foreign libncurses "hline"
+prim__hline : Char -> Int -> PrimIO ()
+
+%foreign libncurses "inch"
+prim__inch : PrimIO Char
+
+%foreign libncurses "winch"
+prim__winch : AnyPtr -> PrimIO Char
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+%foreign libncurses "mvinch"
+prim__mvinch : Int -> Int -> PrimIO Char
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+%foreign libncurses "mvwinch"
+prim__mvwinch : AnyPtr -> Int -> Int -> PrimIO Char
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+%foreign libncurses "mvwvline"
+prim__mvwvline : AnyPtr -> Int -> Int -> Char -> Int -> PrimIO ()
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+%foreign libncurses "mvvline"
+prim__mvvline : Int -> Int -> Char -> Int -> PrimIO ()
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+%foreign libncurses "mvwhline"
+prim__mvwhline : AnyPtr -> Int -> Int -> Char -> Int -> PrimIO ()
+
+||| IMPORTANT: This takes the y-position (the row) before
+||| the x-position (the column).
+%foreign libncurses "mvhline"
+prim__mvhline : Int -> Int -> Char -> Int -> PrimIO ()
+
 ||| IMPORTANT: This takes the y-position (the row) before
 ||| the x-position (the column).
 %foreign libncurses "mvaddch"
@@ -430,6 +478,68 @@ mvAddCh' (Win win) row col c
 export
 mvAddCh : HasIO io => (row, col : Nat) -> Char -> io ()
 mvAddCh row col c = primIO $ prim__mvaddch (cast row) (cast col) c
+
+||| Create a vertical line on the standard window
+export
+vLine : HasIO io => Char -> Nat -> io ()
+vLine c n = primIO $ prim__vline c (cast n)
+
+||| Create a vertical line in a given window
+export
+vLine' : HasIO io => Window -> Char -> Nat -> io ()
+vLine' (Win win) c n = primIO $ prim__wvline win c (cast n)
+
+||| Create a horizontal line on the standard window
+export
+hLine : HasIO io => Char -> Nat -> io ()
+hLine c n = primIO $ prim__hline c (cast n)
+
+||| Create a horizontal line in a given window
+export
+hLine' : HasIO io => Window -> Char -> Nat -> io ()
+hLine' (Win win) c n = primIO $ prim__whline win c (cast n)
+
+||| Move the cursor and create a vertical line on the standard window
+export
+mvVLine : HasIO io => (row, col : Nat) -> Char -> Nat -> io ()
+mvVLine row col c n = primIO $ prim__mvvline (cast row) (cast col) c (cast n)
+
+||| Move the cursor and create a vertical line in a given window
+export
+mvVLine' : HasIO io => Window -> (row, col : Nat) -> Char -> Nat -> io ()
+mvVLine' (Win win) col row c n
+  = primIO $ prim__mvwvline win (cast row) (cast col) c (cast n)
+
+||| Move the cursor and create a horizontal line on the standard window
+export
+mvHLine : HasIO io => (row, col : Nat) -> Char -> Nat -> io ()
+mvHLine row col c n = primIO $ prim__mvhline (cast row) (cast col) c (cast n)
+
+||| Move the cursor and create a horizontal line in a given window
+export
+mvHLine' : HasIO io => Window -> (row, col : Nat) -> Char -> Nat -> io ()
+mvHLine' (Win win) row col c n
+  = primIO $ prim__mvwhline win (cast row) (cast col) c (cast n)
+
+||| Get the character under the cursor in the standard window
+export
+inCh : HasIO io => io Char
+inCh = primIO $ prim__inch
+
+||| Get the character under the cursor in a given window
+export
+inCh' : HasIO io => Window -> io Char
+inCh' (Win win) = primIO $ prim__winch win
+
+||| Move the cursor and get the character under it in the standard window
+export
+mvInCh : HasIO io => (row, col : Nat) -> io Char
+mvInCh row col = primIO $ prim__mvinch (cast row) (cast col)
+
+||| Move the cursor and get the character under it in a given window
+export
+mvInCh' : HasIO io => Window -> (row, col : Nat) -> io Char
+mvInCh' (Win win) row col = primIO $ prim__mvwinch win (cast row) (cast col)
 
 ||| Turn a Key into a Char that can be used to compare against
 ||| the results of getCh. This only applies if you have enabled
