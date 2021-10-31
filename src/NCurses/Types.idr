@@ -72,11 +72,27 @@ allKeys = [F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12
 ||| The default ncurses colors that can be used in constructing
 ||| color pairs.
 public export
-data Color = Black
-           | Red
-           | Green
-           | Yellow
-           | Blue
-           | Magenta
-           | Cyan
-           | White
+data Color
+  = Black
+  | Red
+  | Green
+  | Yellow
+  | Blue
+  | Magenta
+  | Cyan
+  | White
+
+||| Attributes that can be given to text within an ncurses window.
+||| @ cp is the representation of colour pairs
+public export
+data Attribute' cp
+  = Normal
+  | Underline
+  | Standout
+  | Reverse
+  | Blink
+  | Dim
+  | Bold
+  | Protected
+  | Invisible
+  | CP cp

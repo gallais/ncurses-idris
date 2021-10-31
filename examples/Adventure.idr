@@ -19,7 +19,7 @@ isMoveOkay : Position -> NCurses i i Bool
 isMoveOkay pos = do c <- mvInCh pos
                     pure (c == grass || c == empty)
 
-CFG = MkConfig False True
+CFG = MkConfig False True False
 
 exploring : Size -> Position -> NCurses CFG CFG ()
 exploring sz pos@(MkPosition { row, col }) = NCurses.do

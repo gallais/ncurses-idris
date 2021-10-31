@@ -579,6 +579,10 @@ isKey c = firstM (\ k => pure $ k <$ guard (c == !(fnKeyChar k))) allKeys
 export
 data ColorPair = MkColorPair Nat
 
+public export
+Attribute : Type
+Attribute = Attribute' ColorPair
+
 export
 defaultColorPair : ColorPair
 defaultColorPair = MkColorPair 0
@@ -610,19 +614,6 @@ initColorPair idx fg bg =
      let actualIdx = (S idx)
      primIO $ prim__initColorPair (cast actualIdx) fgColor bgColor
      pure (MkColorPair actualIdx)
-
-||| Attributes that can be given to text within an ncurses window.
-public export
-data Attribute = Normal
-               | Underline
-               | Standout
-               | Reverse
-               | Blink
-               | Dim
-               | Bold
-               | Protected
-               | Invisible
-               | CP ColorPair
 
 ||| Get the Int representation ncurses cares about for a
 ||| particular @Attribute@.

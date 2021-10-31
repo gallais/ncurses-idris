@@ -1,5 +1,6 @@
 module NCurses
 
+import public Data.So
 import NCurses.Core
 import public NCurses.Types
 
@@ -11,14 +12,19 @@ record Config where
   constructor MkConfig
   noDelayEnabled : Bool
   keypadEnabled  : Bool
+  colorEnabled   : Bool
 
 public export
 setNoDelay : (enable : Bool) -> Config -> Config
-setNoDelay b (MkConfig _ ke) = MkConfig b ke
+setNoDelay b (MkConfig _ ke ce) = MkConfig b ke ce
 
 public export
 setKeypad : (enable : Bool) -> Config -> Config
-setKeypad b (MkConfig nd _) = MkConfig nd b
+setKeypad b (MkConfig nd _ ce) = MkConfig nd b ce
+
+public export
+setColor : Config -> Config
+setColor (MkConfig nd ke _) = MkConfig nd ke True
 
 namespace Config
 
@@ -29,6 +35,7 @@ namespace Config
   init = MkConfig
     { noDelayEnabled = False
     , keypadEnabled  = False
+    , colorEnabled   = False
     }
 
 ||| An `io a` computation involving ncurses primitives.
@@ -159,12 +166,12 @@ asKey True c = do Nothing <- isKey c
 ||| information.
 export
 getCh : {i : Config} -> HasIO io => NCursesT io i i (GetCh i)
-getCh {i = MkConfig True b}  = MkNCurses $ do
+getCh {i = MkConfig True b _}  = MkNCurses $ do
    i <- Core.getChAsInt8
    let True = 0 <= i
        | False => pure Nothing
    Just <$> asKey b (cast i)
-getCh {i = MkConfig False b} = MkNCurses $ do
+getCh {i = MkConfig False b _} = MkNCurses $ do
   c <- Core.getCh
   asKey b c
 
@@ -268,6 +275,36 @@ setCursorVisibility vis = MkNCurses (Core.setCursorVisibility vis)
 export
 keypad : HasIO io => (b : Bool) -> NCursesT io i (setKeypad b i) ()
 keypad enable = MkNCurses (Core.keypad enable)
+
+export
+ColorPair : Type
+ColorPair = Core.ColorPair
+
+%hide Core.ColorPair
+
+export
+startColor : HasIO io => NCursesT io i (setColor i) ()
+startColor = MkNCurses Core.startColor
+
+export
+initColorPair : HasIO io => So i.colorEnabled =>
+                Nat -> (fg, bg : Color) -> NCursesT io i i ColorPair
+initColorPair n fg bg = MkNCurses (Core.initColorPair n fg bg)
+
+public export
+Attribute : Type
+Attribute = Attribute' ColorPair
+
+%hide Core.Attribute
+
+||| Set an attribute to be applied in the standard window
+||| until it is cleared or overwritten.
+|||
+||| See @nSetAttr'@ for a version that works on
+||| any given window.
+export
+nSetAttr : HasIO io => Attribute -> NCursesT io i i ()
+nSetAttr att = MkNCurses (Core.nSetAttr att)
 
 --------------------------------------------------------------------------------
 -- These are not the best because they're for computations that do not change

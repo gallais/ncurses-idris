@@ -1,4 +1,4 @@
-package ncurses-examples
+package ncurses
 -- version =
 authors = "Matt Polzin, Guillaume Allais"
 -- maintainers =
@@ -10,12 +10,12 @@ authors = "Matt Polzin, Guillaume Allais"
 -- bugtracker =
 
 -- packages to add to search path
-depends = contrib, ncurses
+-- depends =
 
 -- modules to install
-modules = Sierpinski
-        , Adventure
-        , Pumpkin
+modules = NCurses
+        , NCurses.Core
+        , NCurses.Types
 
 -- main file (i.e. file to load at REPL)
 -- main =
@@ -23,7 +23,7 @@ modules = Sierpinski
 -- name of executable
 -- executable =
 -- opts =
--- sourcedir =
+sourcedir = "src"
 -- builddir =
 -- outputdir =
 
