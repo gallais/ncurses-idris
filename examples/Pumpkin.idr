@@ -6,7 +6,10 @@ import Data.Nat
 import Data.Vect
 import NCurses
 
-%default total
+%default covering
+
+CFG : Config
+CFG = MkConfig False False True
 
 main : IO ()
 main = runNCurses $ NCurses.do
@@ -21,6 +24,7 @@ main = runNCurses $ NCurses.do
   orange <- initColorPair 1 Black Yellow
   green  <- initColorPair 2 Green Green
   black  <- initColorPair 3 Black Black
+  red    <- initColorPair 4 Red   Red
 
   nSetAttr (CP green)
   mvHLine (MkPosition { row = 0, col = 18 }) ' ' 4
@@ -72,4 +76,19 @@ main = runNCurses $ NCurses.do
   mvHLine (MkPosition { row = 16, col = 16 }) ' ' 6
   mvHLine (MkPosition { row = 16, col = 26 }) ' ' 4
 
-  ignore $ getCh
+  react red black
+
+  where
+
+    eyes : ColorPair -> NCurses CFG CFG ()
+    eyes col = do
+      nSetAttr (CP col)
+      mvHLine (MkPosition { row = 8, col = 14 }) ' ' 2
+      mvHLine (MkPosition { row = 8, col = 30 }) ' ' 2
+
+    react : (red, black : ColorPair) -> NCurses CFG CFG ()
+    react red black
+      = do c <- getCh
+           let p = ifThenElse (c == 't') (black, red) (red, black)
+           eyes (snd p)
+           when (c /= 'q') $ uncurry react p
