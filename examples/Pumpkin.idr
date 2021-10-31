@@ -8,8 +8,14 @@ import NCurses
 
 %default covering
 
+||| We'll need color, don't care about the keypad and want to block
+||| until users either toggle ('t') or quit ('q')
 CFG : Config
-CFG = MkConfig False False True
+CFG = MkConfig
+  { noDelayEnabled = False
+  , keypadEnabled  = False
+  , colorEnabled   = True
+  }
 
 main : IO ()
 main = runNCurses $ NCurses.do
@@ -17,6 +23,7 @@ main = runNCurses $ NCurses.do
   cBreak
   noEcho
   clear
+  -- we need start color for initColorPair to make sense
   startColor
   setCursorVisibility CInvisible
 
@@ -26,6 +33,7 @@ main = runNCurses $ NCurses.do
   black  <- initColorPair 3 Black Black
   red    <- initColorPair 4 Red   Red
 
+  -- Draw the stalk (parts will be overwritten by the body)
   nSetAttr (CP green)
   mvHLine (MkPosition { row = 0, col = 18 }) ' ' 4
   mvHLine (MkPosition { row = 1, col = 20 }) ' ' 4
@@ -34,6 +42,7 @@ main = runNCurses $ NCurses.do
   mvHLine (MkPosition { row = 4, col = 18 }) ' ' 10
   mvHLine (MkPosition { row = 5, col = 18 }) ' ' 10
 
+  -- Draw the pumpkin's body (parts will be overriden by the holes)
   nSetAttr (CP orange)
   mvHLine (MkPosition { row = 3,  col = 8  }) ' ' 8
   mvHLine (MkPosition { row = 3,  col = 28 }) ' ' 8
@@ -58,6 +67,7 @@ main = runNCurses $ NCurses.do
   mvHLine (MkPosition { row = 18, col = 10 }) ' ' 10
   mvHLine (MkPosition { row = 18, col = 24 }) ' ' 10
 
+  -- Draw the holes
   nSetAttr (CP black)
   mvHLine (MkPosition { row = 7,  col = 14 }) ' ' 2
   mvHLine (MkPosition { row = 7,  col = 30 }) ' ' 2
@@ -89,6 +99,7 @@ main = runNCurses $ NCurses.do
     react : (red, black : ColorPair) -> NCurses CFG CFG ()
     react red black
       = do c <- getCh
+           -- swapping red for black means turning the eyes on/off
            let p = ifThenElse (c == 't') (black, red) (red, black)
            eyes (snd p)
            when (c /= 'q') $ uncurry react p
