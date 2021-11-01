@@ -16,6 +16,7 @@ depends = contrib, ncurses
 modules = Sierpinski
         , Adventure
         , Pumpkin
+        , AdventureInColor
 
 -- main file (i.e. file to load at REPL)
 -- main =
